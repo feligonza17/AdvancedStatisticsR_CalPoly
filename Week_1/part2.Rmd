@@ -1,0 +1,102 @@
+---
+title: "Part 2"
+author: "Felipe González Arango"
+output:
+  html_document:
+    highlight: tango
+    number_sections: yes
+    theme: sandstone
+    toc: yes
+    toc_depth: 2
+    toc_float:
+      collapsed: yes
+---
+
+## Part Two: Data Analysis (150 points)
+
+**Create a new R Markdown file for Part Two.**
+
+Make sure your final file is carefully formatted, so that each analysis is clear and concise.  
+Be sure your knitted .html file shows all your source code.
+
+
+### The Data
+
+Use the dataset `Oscars-demographics-DFE.csv` in this repository.
+
+To accomplish the tasks in this exam, you will need to do appropriate cleaning, adjusting, and reorganizing of the data.
+
+In what follows, the phrase "Big 5 Awards" refers to the five individual Academy Awards covered in this dataset:  
+Best Director, Best Actor, Best Actress, Best Supporting Actor, and Best Supporting Actress.
+
+### Warm-ups (10 points each)
+
+1. Which movie(s) won the most unique "Big 5" awards?
+
+```{r message=FALSE, warning=FALSE}
+library(readr)
+library(tidyverse)
+library(janitor)
+library(vtable)
+#Import data base
+
+movies_data <- read_csv("Oscars-demographics-DFE.csv")
+movies_data <- clean_names(movies_data) #Clean variable names
+st(movies_data)
+
+big_5 <- c("Best Actor", "Best Director", "Best Actress", "Best Supporting Actor","Best Supporting Actress") #Creat vector for Big 5
+
+movies_data %>% 
+  group_by(movie) %>% 
+  distinct(award) %>% 
+  count() %>% 
+  arrange(desc(n))
+
+
+
+```
+
+
+2. Of all actresses who have won the Best Actress award, what are is the most common first name?  
+
+```{r}
+library(unglue)
+library(magrittr)
+
+movies_data %>% 
+  filter(award=="Best Actress") %>% 
+  select(person) %>% 
+  unglue_unnest(., person,"{FirstName} {LastName}") %$%  # This makes two columns one with the fisrt name and the other with the last name
+  table(FirstName)
+```
+
+The name is Hilary. 
+
+3. What US State, or non-US country, has produced the most Oscar winners (for the awards in this dataset)?
+
+```{r}
+freq <- table(word(movies_data$birthplace, -1)) #Creates a frequency table of the States or countries
+which.max(freq) #Gives the value
+```
+
+
+### Age and Gender (60 points)
+
+The information in this dataset includes two awards given only to women (Best Actress, Best Supporting Actress) 
+and two awards given only to men (Best Actor, Best Supporting Actor).  
+
+Create a linear model that explores how the typical age of acting award winners has changed over time, 
+and how that effect is different for the two genders of awards.
+
+*(Note:  You will absolutely need to do some careful manipulation of the date information in this dataset, before you create your model.
+You may assume all Oscar awards take place on Feb 1 of the year they are awarded.)*
+
+Print out the results of your model, and briefly discuss the interpretations and conclusions.
+
+
+### Bootstrapping (60 points)
+
+Use a bootstrap approach to answer the following question:  
+What is an approximate 95% confidence interval for percent of "Big 5 Award" award winners who are not white?
+
+In addition to the confidence interval, make a plot that illustrates your findings.
