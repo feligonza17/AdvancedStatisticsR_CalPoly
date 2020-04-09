@@ -1,0 +1,121 @@
+---
+title: "Part 1"
+author: "Felipe González Arango"
+output:
+  html_document:
+    highlight: tango
+    number_sections: yes
+    theme: sandstone
+    toc: yes
+    toc_depth: 2
+    toc_float:
+      collapsed: yes
+---
+
+## Part One: Checking Normality (150 pts)
+
+**Create an R Markdown file for Part One.**
+
+Make sure your final file is carefully formatted, so that each analysis is clear and concise.  Be sure your knitted .html file shows all your source code, including your function definitions.  
+(That is, for purposes of this exam, do not write your functions in a separate source file.)
+
+### Background: Q-Q Plots
+
+A Q-Q (Quantile-Quantile) Plot is a way of checking if two collections of observations come from the same distribution.
+
+The steps are as follows:
+
+1. Take two vectors of the same length, `x` and `y`.
+
+2. Put the vectors in order from largest to smallest.
+
+3. Pair the ordered vectors up, so that the smallest value of `x` is paired with the smallest value of `y`, and so on.
+
+4. Make a scatterplot of the ordered pairs.  
+
+If the points in the scatterplot fall on a straight line, with intercept 0 and slope 1, 
+this suggests that `x` and `y` are sampled from the same distribution.
+
+
+In this section, you will use a **Q-Q Plot** to check if a vector of values `x` comes from a Normal distribution.  
+The approach is to randomly generate a new vector `y` from a Normal distribution with the same mean and standard deviation as `x`, 
+then to create a Q-Q plot of `x` and `y`.
+*(Note: A typical Normal Q-Q plot uses theoretical quantiles instead of randomly generated values.  We're taking a bit of a shortcut
+in this assignment.)*
+
+
+### Write a function  (100 points)
+
+Your final function should take as input a **numeric vector**.
+
+It should return (not just print!) a **Q-Q Plot** comparing your input to Normally distributed values.
+
+You may **not** use any existing functions specific to Q-Q plots; including (but not limited to) `qqplot()`, `geom_qq`, or `stat_qq`. 
+
+Demonstrate that your function works by running it on either real data of your choice, or on a non-Normal vector that you create.
+
+```{r message=FALSE, warning=FALSE}
+
+#Load packages
+library(tidyverse)
+
+#Create Funcion 
+part_one_function <- function(numeric_vector){
+  
+sort(numeric_vector, decreasing = T)
+  
+#The comparison vector has to have the same mean and sd as numeric_vector
+y <- sort(rnorm(length(numeric_vector), 
+                mean=mean(numeric_vector), 
+                sd= sd(numeric_vector)), 
+          decreasing = T) 
+
+#Pair values 
+mat <- as_tibble(t(rbind(t(numeric_vector), 
+                         t(y)))) #t() is the transpose function
+
+#Change variable names to make plot easier
+colnames(mat) <- c("x","y")
+
+#Create scatterplot and comparison slope
+plot <- ggplot(aes(x=x, y=y), data = mat)+
+        geom_point()+
+        geom_abline(slope = 1, intercept = 0)
+
+assign("plot", 
+       plot, 
+       envir=globalenv()) #This puts the plot in the global environment. 
+
+return(plot)
+}
+```
+
+```{r message=FALSE, warning=FALSE}
+#Create vector to test function
+
+data <- sample(x=1:1000, size=200, replace = T)
+
+part_one_function(data)
+
+```
+
+### Code design and style (50 points)
+
+A third of your grade on this section is for beautiful, well-formatted, and well-designed code.
+
+Some (non-exhaustive!) tips:
+
+* Name your variables and functions reasonably and informatively.
+
+* Follow style guides (tidyverse or Google), especially with regard to white space, parentheses, and brackets.
+
+* Be deliberate about your objects and object types, and how you choose to store information.
+
+* Write efficient code: do not duplicate analyses unnecessarily, use loops/map/apply when it is not needed, 
+or create new objects you don't need.
+
+* Write well-designed code: your main function might rely on helpful smaller functions, 
+and all functions should take reasonable inputs and give reasonable outputs.
+
+* Your code should have at least a few comments, explaining what your functions do.
+
