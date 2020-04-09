@@ -80,7 +80,8 @@ colnames(mat) <- c("x","y")
 #Create scatterplot and comparison slope
 plot <- ggplot(aes(x=x, y=y), data = mat)+
         geom_point()+
-        geom_abline(slope = 1, intercept = 0)
+        geom_abline(slope = 1, intercept = 0, colour="red")+
+  theme_minimal()
 
 assign("plot", 
        plot, 
