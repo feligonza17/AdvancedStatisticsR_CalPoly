@@ -66,16 +66,21 @@ library(magrittr)
 movies_data %>% 
   filter(award=="Best Actress") %>% 
   select(person) %>% 
+  distinct(person) %>% 
   unglue_unnest(., person,"{FirstName} {LastName}") %$%  # This makes two columns one with the fisrt name and the other with the last name
   table(FirstName)
 ```
 
-The name is Hilary. 
+The name is Helen. 
 
 3. What US State, or non-US country, has produced the most Oscar winners (for the awards in this dataset)?
 
 ```{r}
-freq <- table(word(movies_data$birthplace, -1)) #Creates a frequency table of the States or countries
+freq <-  sub('.*,\\s*', '', movies_data$birthplace)
+freq[freq[]=="Ny"] <- "New York City" #Changes all values of Ny for the long one
+
+freq <- table(freq)#Creates a frequency table of the States or countries
+
 which.max(freq) #Gives the value
 ```
 
