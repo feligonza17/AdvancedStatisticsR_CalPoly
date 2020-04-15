@@ -1,0 +1,176 @@
+---
+title: "Lab_2"
+author: "Felipe González Arango"
+output: html_notebook
+---
+# Lab 2: Advanced Data Visualization
+
+**Create an R Markdown file for all of Lab 2.**
+
+Make sure your final file is carefully formatted, so that each analysis is clear and concise.  Be sure your knitted .html file shows all your source code, including your function definitions. 
+
+## Part One: Identifying Bad Visualizations (100 pts)
+
+If you happen to be bored and looking for a sensible chuckle, you should check out these [Bad Visualisations](https://badvisualisations.tumblr.com/). Looking through these is also a good exercise in cataloging what makes a visualzation good or bad. 
+
+### Dissecting a Bad Visualization
+
+![](https://media.giphy.com/media/SVL5Dws0bOSgE/giphy.gif)
+
+Below is an example of a less-than-ideal visualization from the collection linked above. It comes to us from data provided for the Wellcome Global Monitor 2018 report by the Gallup World Poll 2018:
+
+![](bad_wellcome_graph.jpg)
+
+1. While there are certainly issues with this image, do your best to tell the story of this graph in words. That is, what is this graph telling you? What do you think the authors meant to convey with it?
+
+The graph is showing the percent of people, within each country, that beleive vaccines are safe. They faceted the countries by continent or regions. They also showed the median of that same percentage within each region. 
+
+2. List the variables that appear to be displayed in this visualization.
+
+Country, region, percentage of people who beleive vaccines are safe
+
+3. Now that you're versed in the grammar of graphics (ggplot), list the aesthetics used and which variables are specified for each.
+
+
+
+4. What type of graph would you call this?
+
+Scatterplot
+
+5. List all of the problems or things you would improve about this graph.  
+
+The x-axis shouldn't be the percentage because the progression is not informative
+
+
+
+### Improving the Bad Visualization
+
+The data for the Wellcome Global Monitor 2018 report can be downloaded at the following site at the "Dataset and crosstabs for all countries" link on the right side of the page:
+
+[https://wellcome.ac.uk/reports/wellcome-global-monitor/2018](https://wellcome.ac.uk/reports/wellcome-global-monitor/2018)
+
+There are two worksheets in the downloaded dataset file. You may need to read them in separately, but you may also just use one if it suffices.
+
+* Improve the visualization above by either re-creating it with the issues you identified fixed OR by creating a new visualization that you believe tells the same story better.
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(janitor)
+
+data <- read_excel("wgm2018-dataset-crosstabs-all-countries.xlsx")
+
+#We only need the country data so we subselect the data base
+
+data_country <- data[-1,1:5]
+colnames(data_country) <- data_country[1,] #Name the variables
+data_country <- data_country[-1,] #Clean data set
+
+data_country <- clean_names(data_country)
+
+percentages_country <- 
+  data_country %>% 
+  filter(question=="Q25 Do you strongly or somewhat agree, strongly or somewhat disagree or neither agree nor disagree with the following statement? Vaccines are safe.") %>% 
+  filter(response=="Strongly agree" | response=="Somewhat agree") %>% 
+  group_by(country) %>% 
+  summarize(perc_agree=sum(as.numeric(column_n_percent)))
+
+data_full <- read_excel("wgm2018-dataset-crosstabs-all-countries.xlsx", sheet=2)
+
+values_dict <- c("0"="Not assigned","1"="Eastern Africa","2"="Central Africa","3"="North Africa","4"="Southern Africa","5"="Western Africa","6"="Central America and Mexico","7"="Northern America","8"="South America","9"="Central Asia","10"="East Asia","11"="Southeast Asia","12"="South Asia","13"="Middle East","14"="Eastern Europe","15"="Northern Europe","16"="Southern Europe","17"="Western Europe","18"="Aus/NZ")
+
+data_full$WP5 <- as.character(data_full$WP5)
+
+
+data_full$WP5 <- recode(data_full$WP5, "1"="United States", "2"="Egypt", "3"="Morocco", "4"="Lebanon", "5"="Saudi Arabia", "6"="Jordan", "8"="Turkey", "9"="Pakistan", "10"="Indonesia", "11"="Bangladesh", "12"="United Kingdom", "13"="France", "14"="Germany", "15"="Netherlands", "16"="Belgium", "17"="Spain", "18"="Italy", "19"="Poland", "20"="Hungary", "21"="Czech Republic", "22"="Romania", "23"="Sweden", "24"="Greece", "25"="Denmark", "26"="Iran", "28"="Singapore", "29"="Japan", "30"="China", "31"="India", "32"="Venezuela", "33"="Brazil", "34"="Mexico", "35"="Nigeria", "36"="Kenya", "37"="Tanzania", "38"="Israel", "39"="Palestinian Territories", "40"="Ghana", "41"="Uganda", "42"="Benin", "43"="Madagascar", "44"="Malawi", "45"="South Africa", "46"="Canada", "47"="Australia", "48"="Philippines", "49"="Sri Lanka", "50"="Vietnam", "51"="Thailand", "52"="Cambodia", "53"="Laos", "54"="Myanmar", "55"="New Zealand", "57"="Botswana", "60"="Ethiopia", "61"="Mali", "62"="Mauritania", "63"="Mozambique", "64"="Niger", "65"="Rwanda", "66"="Senegal", "67"="Zambia", "68"="South Korea", "69"="Taiwan", "70"="Afghanistan", "71"="Belarus", "72"="Georgia", "73"="Kazakhstan", "74"="Kyrgyzstan", "75"="Moldova", "76"="Russia", "77"="Ukraine", "78"="Burkina Faso", "79"="Cameroon", "80"="Sierra Leone", "81"="Zimbabwe", "82"="Costa Rica", "83"="Albania", "84"="Algeria", "87"="Argentina", "88"="Armenia", "89"="Austria", "90"="Azerbaijan", "96"="Bolivia", "97"="Bosnia and Herzegovina", "99"="Bulgaria", "100"="Burundi", "103"="Chad", "104"="Chile", "105"="Colombia", "106"="Comoros", "108"="Republic of Congo", "109"="Croatia", "111"="Cyprus", "114"="Dominican Republic", "115"="Ecuador", "116"="El Salvador", "119"="Estonia", "121"="Finland", "122"="Gabon", "124"="Guatemala", "125"="Guinea", "128"="Haiti", "129"="Honduras", "130"="Iceland", "131"="Iraq", "132"="Ireland", "134"="Ivory Coast", "137"="Kuwait", "138"="Latvia", "140"="Liberia", "141"="Libya", "143"="Lithuania", "144"="Luxembourg", "145"="Macedonia", "146"="Malaysia", "148"="Malta", "150"="Mauritius", "153"="Mongolia", "154"="Montenegro", "155"="Namibia", "157"="Nepal", "158"="Nicaragua", "160"="Norway", "163"="Panama", "164"="Paraguay", "165"="Peru", "166"="Portugal", "173"="Serbia", "175"="Slovakia", "176"="Slovenia", "183"="Eswatini", "184"="Switzerland", "185"="Tajikistan", "186"="The Gambia", "187"="Togo", "190"="Tunisia", "191"="Turkmenistan", "193"="United Arab Emirates", "194"="Uruguay", "195"="Uzbekistan", "197"="Yemen", "198"="Kosovo", "202"="Northern Cyprus")
+
+data_full$Regions_Report <- as.character(data_full$Regions_Report)
+
+data_full$Regions_Report <- recode(data_full$Regions_Report, "0"="Not assigned","1"="Eastern Africa","2"="Central Africa","3"="North Africa","4"="Southern Africa","5"="Western Africa","6"="Central America and Mexico","7"="Northern America","8"="South America","9"="Central Asia","10"="East Asia","11"="Southeast Asia","12"="South Asia","13"="Middle East","14"="Eastern Europe","15"="Northern Europe","16"="Southern Europe","17"="Western Europe","18"="Aus/NZ")
+
+data_full$WBI <- as.character(data_full$WBI)
+
+data_full$WBI <- recode(data_full$WBI, "1"="Low income", "2"="Lower Middle income", "3"="Upper Middle income", "4"="High income")
+
+percentages_country <- inner_join(percentages_country, 
+                                  data_full[,c("WP5", "Regions_Report", "WBI")],
+                                  by=c("country"="WP5")) %>% distinct() #Merge the regions
+
+
+
+percentages_country <-  percentages_country %>%  
+  mutate(region_fin = ifelse(str_detect(Regions_Report, "Asia"),
+                             "Asia",
+                      ifelse(str_detect(Regions_Report, "Europe"),
+                             "Europe",
+                      ifelse(str_detect(Regions_Report, "America"),
+                             "America",
+                      ifelse(str_detect(Regions_Report, "Europe"),
+                             "Europe",
+                      ifelse(str_detect(Regions_Report, "Africa"),
+                             "Africa", "Rest of World"))))))
+                             
+percentages_country <- 
+  percentages_country %>% 
+  group_by(region_fin) %>% 
+  mutate(med=median(perc_agree))#Calculate the median of each region
+
+library(ggrepel)
+library(ggforce) 
+library(ggdark)
+library(gganimate)
+
+ggplot(percentages_country, mapping = aes(x=country, y=perc_agree, colour=WBI))+
+  facet_wrap(~region_fin)+
+  geom_point()+
+    geom_text_repel(aes(label = country))+
+  labs(colour = "Country Income Level (World Bank)")+
+  ylab("Percentage of people within the country who agree that vaccines are safe")+
+  dark_theme_minimal()+
+    theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())+
+  transition_states(as.factor(WBI), wrap = FALSE)+
+    enter_grow() + 
+  exit_fade()
+anim_save(file = "animation.gif" )
+
+  
+
+
+```
+
+
+## Part Two: Broad Visualization Improvement (200 points)
+
+The full Wellcome Global Monitor 2018 report can be found here: [https://wellcome.ac.uk/sites/default/files/wellcome-global-monitor-2018.pdf](https://wellcome.ac.uk/sites/default/files/wellcome-global-monitor-2018.pdf). Surprisingly, the visualization above does not appear in the report despite the citation in the bottom corner of the image!
+
+**For the work below, you must use leaflet at least once. You must also use one of the other packages mentioned this week. More specifically, you cannot just use ggplot for the remainder of the lab assignment.**
+
+### Second Data Visualization Improvement
+
+1. Select a data visualization in the report that you think could be improved. Be sure to cite both the page number and figure title. Do your best to tell the story of this graph in words. That is, what is this graph telling you? What do you think the authors meant to convey with it?
+
+2. List the variables that appear to be displayed in this visualization.
+
+3. Now that you're versed in the grammar of graphics (ggplot), list the aesthetics used and which variables are specified for each.
+
+4. What type of graph would you call this?
+
+5. List all of the problems or things you would improve about this graph.  
+
+6. Improve the visualization above by either re-creating it with the issues you identified fixed OR by creating a new visualization that you believe tells the same story better.
+
+### Third Data Visualization Improvement
+
+1. Select a data visualization in the report that you think could be improved. Be sure to cite both the page number and figure title. Do your best to tell the story of this graph in words. That is, what is this graph telling you? What do you think the authors meant to convey with it?
+
+2. List the variables that appear to be displayed in this visualization.
+
+3. Now that you're versed in the grammar of graphics (ggplot), list the aesthetics used and which variables are specified for each.
+
+4. What type of graph would you call this?
+
+5. List all of the problems or things you would improve about this graph.  
+
+6. Improve the visualization above by either re-creating it with the issues you identified fixed OR by creating a new visualization that you believe tells the same story better.
