@@ -1,0 +1,59 @@
+---
+title: "Leaflet tutorial"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r}
+library(leaflet)
+
+my_map <- leaflet() %>% 
+  addTiles()
+
+my_map %>% addMarkers(lat = 4.639767, lng = -74.061761, 
+                      popup = "Mi casia") %>% 
+  addMarkers(lat = 4.684778, lng = -74.045344, 
+                      popup = "la lindia <3")
+
+
+
+head(my_map$width)
+```
+
+
+#Covid-19 en Bogotá
+
+```{r}
+library(janitor)
+library(tidyverse)
+library(ggdark)
+library(gganimate)
+covid <- read.csv("osb_enftransm-covid-19.csv")
+covid <- clean_names(covid)
+covid <- covid %>% group_by(localidad_de_residencia) %>% mutate(n_localidad=n(), media_edad=mean(edad))
+
+
+
+p <- covid %>% 
+  ggplot(aes(y=reorder(localidad_de_residencia, n_localidad)))+ 
+           geom_bar(fill="cadetblue3")+
+  geom_text(stat='count', aes(label=..count..), hjust=-0.1)+
+  ylab("Localidad")+
+  xlab("Número de casos confirmados")+
+  ggtitle("Casos confirmados Covid-19 en Bogotá por localidad")+
+           dark_theme_minimal()
+
+anim <- p +  
+  transition_states(reorder(localidad_de_residencia, n_localidad),
+                    transition_length = 2,
+                    state_length = 1)+
+  ggtitle("Casos confirmados Covid-19 en Bogotá por localidad")
+
+anim + 
+  enter_fade() 
+
+anim_save("animacion_covid19_bog.gif")
+  
+```
+
