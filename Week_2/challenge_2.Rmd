@@ -48,7 +48,7 @@ ggplot()+
   ylab("")+
   labs(fill="Expenses (USD)",
        caption="Source:\n(https://www.kaggle.com/fec/independent-political-ad-spending)")+
-  ggtitle("Spending on political ads by independent (non-candidate)\n groups in General Elections (2008-2016)")+
+  ggtitle("Addressed spending on political ads by independent\n groups in General Elections (2008-2016)")+
   theme_fivethirtyeight()+
   theme(legend.direction = "vertical", legend.box = "vertical", legend.position = "right", legend.justification = "bottom" )+
       theme(axis.title.x=element_blank(),
