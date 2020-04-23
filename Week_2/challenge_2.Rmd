@@ -3,6 +3,7 @@ title: "Challenge 2"
 output: html_notebook
 ---
 
+#Plot 1 (all general elections)
 ```{r}
 #Packages
 
@@ -11,30 +12,98 @@ library(tidyverse)
 library(vtable)
 library(magrittr)
 library(usmap)
-
+library(leaflet)
+library(stringr)
+library(ggthemes)
 #Coordinates of US states
 
-us <- us_map(regions = "states")
-fec_independent_expenditures <- read_csv("fec-independent-expenditures.csv")
-data_clean <- remove_empty(fec_independent_expenditures, which = "cols")
+fec_independent_expenditures <- read_csv("C:/Users/felig/OneDrive/Documentos/Documents/Documentos_R/Tidy Tuesday/fec-independent-expenditures.csv") #Import data base
 
+
+us <- map_data("state") #Import coordinates of US states
+us$region <- recode(us$region, "alabama"="AL","alaska"="AK","arizona"="AZ","arkansas"="AR","california"="CA","colorado"="CO","connecticut"="CT","delaware"="DE","florida"="FL","georgia"="GA","hawaii"="HI","idaho"="ID","illinois"="IL","indiana"="IN","iowa"="IA","kansas"="KS","kentucky"="KY","louisiana"="LA","maine"="ME","maryland"="MD","massachusetts"="MA","michigan"="MI","minnesota"="MN","mississippi"="MS","missouri"="MO","montana"="MT","nebraska"="NE","nevada"="NV","new hampshire"="NH","new jersey"="NJ","new mexico"="NM","new york"="NY","north carolina"="NC","north dakota"="ND","ohio"="OH","oklahoma"="OK","oregon"="OR","pennsylvania"="PA","rhode island"="RI","south carolina"="SC","south dakota"="SD","tennessee"="TN","texas"="TX","utah"="UT","vermont"="VT","virginia"="VA","washington"="WA","west virginia"="WV","wisconsin"="WI","wyoming"="WY") #Recode value so that they match kaggle
+
+
+data_clean <- remove_empty(fec_independent_expenditures, which = "cols") #remove empty columns
 data_clean <- data_clean %>% 
-  #filter(expenditure_amount>mean(expenditure_amount, na.rm = T)) %>% 
   select(committee_name, report_year, payee_name, payee_city, payee_state, expenditure_description,
-         expenditure_amount, candidate_name, election_type_full)
+         expenditure_amount, candidate_name, election_type_full, election_type, report_year) #Select varibales of interes
 
 merge_us <- data_clean %>% 
-  filter(election_type_full=="GENERAL") %>% 
-  filter(expenditure_amount>mean(expenditure_amount, na.rm = T)) %>% 
-  group_by(committee_name) %>% 
-  mutate(n_committe_name=n()) %>% 
-  ungroup() %>%
-  group_by(committee_name, payee_state) %>% 
-  mutate(mean_expenses_bystate=mean(expenditure_amount)) %>% 
-  filter(n_committe_name>150) %>% 
-  left_join(us, by=c("payee_state"="abbr"), keep=T)
-  
-merge_us <- merge(merge_us, us, by.x="payee_state", by.y="abbr", all.x = F)
+  filter(election_type_full=="GENERAL") %>% #only general elections
+  filter(candidate_name=="OBAMA, BARACK" | candidate_name=="CLINTON, HILLARY" | candidate_name=="TRUMP, DONALD")%>% 
+  group_by(candidate_name, payee_state) %>% #Para que quede por estado y candidato
+  summarise(mean_expenses_bystate=mean(expenditure_amount)) %>% 
+  filter(mean_expenses_bystate<quantile(mean_expenses_bystate, .90, na.rm=T)) %>%  #remover outliers - percentil 90 pa abajo, (gente que gasta un resto de plata)
+  drop_na() %>%
+  full_join(us, by=c("payee_state"="region")) #Merge US states coordinates - Para tener todas las coordenadas de los estados
 
+merge_us %>% 
+filter(candidate_name=="OBAMA, BARACK" | candidate_name=="CLINTON, HILLARY" | candidate_name=="TRUMP, DONALD")%>%
+ggplot()+
+  geom_polygon(aes(x=long, y=lat, group=group, fill=mean_expenses_bystate), color = "#0B0C0B", size = 0.1)+
+  coord_map()+
+  facet_grid(~candidate_name)+
+  xlab("")+
+  ylab("")+
+  labs(fill="Expenses (USD)",
+       caption="Source:\n(https://www.kaggle.com/fec/independent-political-ad-spending)")+
+  ggtitle("Spending on political ads by independent (non-candidate)\n groups in General Elections (2008-2016)")+
+  theme_fivethirtyeight()+
+  theme(legend.direction = "vertical", legend.box = "vertical", legend.position = "right", legend.justification = "bottom" )+
+      theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(), 
+        strip.text.x = element_text(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank())
+
+ggsave("candidate_state_ad_expenses_2008_2016.jpg")
+  
+```
+
+
+
+#Plot 2 discriminating by election
+
+
+```{r}
+merge_us <- data_clean %>% 
+  filter(election_type=="G2008"|election_type=="G2012" |election_type=="G2016") %>% #only general elections
+  filter(candidate_name=="OBAMA, BARACK" | candidate_name=="CLINTON, HILLARY" | candidate_name=="TRUMP, DONALD")%>% 
+  group_by(candidate_name, payee_state, election_type) %>% #Para que quede por estado y candidato
+  mutate(mean_expenses_bystate=mean(expenditure_amount)) %>% 
+  ungroup() %>% 
+  filter(mean_expenses_bystate<quantile(mean_expenses_bystate, .90, na.rm=T)) %>%  #remover outliers - percentil 90 pa abajo, (gente que gasta un resto de plata)
+  drop_na() %>% 
+  full_join(us, by=c("payee_state"="region")) #Merge US states coordinates - Para tener todas las coordenadas de los estados
+
+merge_us %>% 
+filter(candidate_name=="OBAMA, BARACK" | candidate_name=="CLINTON, HILLARY" | candidate_name=="TRUMP, DONALD")%>%
+ggplot()+
+  geom_polygon(aes(x=long, y=lat, group=group, fill=mean_expenses_bystate), color = "#0B0C0B", size = 0.1)+
+  coord_map()+
+  facet_grid(election_type~.)+
+  xlab("")+
+  ylab("")+
+  labs(fill="Expenses (USD)",
+       caption="Source:\n(https://www.kaggle.com/fec/independent-political-ad-spending)")+
+  ggtitle("Spending on political ads by independent (non-candidate)\n groups in General Elections (2008-2016)")+
+  #theme_fivethirtyeight()+
+  theme(legend.direction = "vertical", legend.box = "vertical", legend.position = "right", legend.justification = "bottom" )+
+      theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(), 
+        strip.text.x = element_text(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank())
+
+ggsave("candidate_state_ad_expenses6.jpg")
 ```
 
