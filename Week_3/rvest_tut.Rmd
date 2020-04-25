@@ -1,0 +1,40 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(rvest)
+
+imdb <- read_html("https://www.imdb.com/chart/moviemeter/?sort=ir,desc&mode=simple&page=1")
+
+title <- imdb %>% html_nodes(".titleColumn a") %>% html_text()
+year <- imdb %>% html_nodes("a+ .secondaryInfo") %>% html_text()
+rating <- imdb %>% html_nodes("strong") %>% html_text()
+rating[92:100] <- "NA" #No hay valores 
+
+
+imdb_table <- data.frame(title, year, rating)
+library(RSQLite)
+
+base <- RSQLite::dbConnect(RSQLite::SQLite(), "C:/Users/felig/OneDrive/Documentos/Documents/Documentos_R/AdvancedStatisticsR_CalPoly/Week_3/chinook.db" )
+
+library(httr)
+library(jsonlite)
+
+res <-  GET("http://api.open-notify.org/astros.json")
+
+ 
+ 
+res
+ 
+rawToChar(res$content)
+#Transforms data into JSON format
+
+data <-  fromJSON(rawToChar(res$content))
+
+data$people
+
+
+```
+
