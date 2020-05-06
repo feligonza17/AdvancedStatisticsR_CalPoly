@@ -18,12 +18,12 @@ Run the following code chunk to load up your matrix (M), and to generate some ra
 ```{r}
 ### DO NOT CHANGE ANYTHING IN THIS CODE CHUNK!!!
 
-M = read.csv("img.txt", header = FALSE)
-M = as.matrix(M)
+M <-  read.csv("img.txt", header = FALSE)
+M <-  as.matrix(M)
 
 
-n = nrow(M)
-p = ncol(M)
+n <-  nrow(M)
+p <-  ncol(M)
 
 set.seed(123)
 A <- diag(rnorm(p))
@@ -50,6 +50,7 @@ When you are asked to do something to the matrix M, make sure you save the updat
 # Correct step:
 M <- M %*% A
 
+
 # This will perform the calculation, but not update M
 # M %*% A
 
@@ -70,7 +71,7 @@ For example, let's look at the **wrong way** to do Step 2:
 
 2. Multiply every row of M elementwise by x. 
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 M_wrong <- M*x
 dim(M)
 dim(M_wrong)
@@ -80,20 +81,22 @@ What happened?  Well, R's default when given ordinary multiplication (`*`) on a 
 
 Here is a simpler example:
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 Mat <- rbind(
   c(1,2),
   c(3,4)
 )
-
 vec <- c(1, 100)
+Mat
+vec
+
 
 Mat * vec
 ```
 
 One solution to this problem (there are many ways to approach it!) is to be creative with transposing your matrix:
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 new_mat <- t(Mat)*vec
 new_mat
 new_mat <- t(new_mat)
@@ -113,26 +116,74 @@ Perform the following steps (we have already shown  1 and 2) to discover the sec
 
 1. Matrix-multiply M by A.
 
+```{r}
+M <- M%*%A
+dim(M)
+```
 
 2. Multiply every row of M elementwise by x. 
+
+```{r}
+M <- t(M)*x
+M <- t(M)
+dim(M)
+```
 
 
 3. Make a diagonal matrix called Y whose diagonal values are the elements of the vector y.  Matrix-multiply the inverse of Y by M.
 
+```{r}
+Y <- diag(y)
+
+M <- solve(Y)%*%M
+
+dim(M)
+```
+
 
 4.  Calculate the determinant of B.  Add this scalar to every element of M.
+```{r}
+det_b <- det(B)
+
+M <- M + det_b
+```
 
 
 5. Use `eigen()` to find the eigenvalues and eigenvectors of B.  Find the sum of the third eigenvector of B. Multiply every element of M by this scalar.
 
+```{r}
+eigen_B <- eigen(B)
+M <- M*sum(eigen_B$vectors[,3])
+
+```
 
 6. Multiply each element of M by the corresponding element of the matrix formed by (xy')'.
 
+```{r}
+M <- M*(t(x%*%t(y)))
+```
+
+
 
 7. Find the singular value decomposition H = UDV' using `svd()`.  Multiply each element of M by each element of 100*U. 
+```{r}
 
+decom <- svd(H)
+decom <- 100*decom$u
+M <- M*decom
+
+```
+ 
 
 8. Calculate the sum of the singular values of H.  Divide *every* element of M by this scalar.
+
+```{r}
+
+scala_h <- sum(unique(H))
+
+M <- M/scala_h
+
+```
 
 
 ## The results
